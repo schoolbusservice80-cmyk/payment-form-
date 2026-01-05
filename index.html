@@ -14,42 +14,44 @@
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 15px; background-color: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 25px; font-weight: bold; }
         button:disabled { background-color: #bdc3c7; }
-        #status { text-align: center; margin-top: 15px; font-weight: bold; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 5px; }
+        .success-msg { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
 
 <div class="form-container">
-    <h2>የማልድ ትራንስፖርት ክፍያ ማረጋገጫ</h2>
-    <form id="paymentForm">
-        <label>የተማሪ ሙሉ ስም</label>
-        <input type="text" id="studentName" placeholder="ስም ያስገቡ" required>
+    <div id="formContent">
+        <h2>የማልድ ትራንስፖርት ክፍያ ማረጋገጫ</h2>
+        <form id="paymentForm">
+            <label>የተማሪ ሙሉ ስም</label>
+            <input type="text" id="studentName" placeholder="ስም ያስገቡ" required>
 
-        <label>ስልክ ቁጥር</label>
-        <input type="tel" id="phoneNumber" placeholder="09..." required>
+            <label>ስልክ ቁጥር</label>
+            <input type="tel" id="phoneNumber" placeholder="09..." required>
 
-        <label>ትምህርት ቤት ይምረጡ</label>
-        <select id="schoolName" onchange="updateStaffList()" required>
-            <option value="">-- ትምህርት ቤት ይምረጡ --</option>
-            <option value="MALD INTERNATIONAL SCHOOLS">MALD INTERNATIONAL SCHOOLS</option>
-            <option value="BIS INTERNATIONAL SCHOOL">BIS INTERNATIONAL SCHOOL</option>
-        </select>
+            <label>ትምህርት ቤት ይምረጡ</label>
+            <select id="schoolName" onchange="updateStaffList()" required>
+                <option value="">-- ትምህርት ቤት ይምረጡ --</option>
+                <option value="MALD INTERNATIONAL SCHOOLS">MALD INTERNATIONAL SCHOOLS</option>
+                <option value="BIS INTERNATIONAL SCHOOL">BIS INTERNATIONAL SCHOOL</option>
+            </select>
 
-        <label>የሰራተኛ ስም</label>
-        <select id="staffName" required disabled>
-            <option value="">-- መጀመሪያ ትምህርት ቤት ይምረጡ --</option>
-        </select>
+            <label>የሰራተኛ ስም</label>
+            <select id="staffName" required disabled>
+                <option value="">-- መጀመሪያ ትምህርት ቤት ይምረጡ --</option>
+            </select>
 
-        <label>የባንክ ደረሰኝ (ፎቶ)</label>
-        <input type="file" id="receiptFile" accept="image/*" required>
+            <label>የባንክ ደረሰኝ (ፎቶ)</label>
+            <input type="file" id="receiptFile" accept="image/*" required>
 
-        <button type="submit" id="submitBtn">መረጃውን ላክ</button>
-    </form>
+            <button type="submit" id="submitBtn">መረጃውን ላክ</button>
+        </form>
+    </div>
     <div id="status"></div>
 </div>
 
 <script>
-    // ሰራተኞችን ከትምህርት ቤት ጋር ማያያዝ
     const staffData = {
         "MALD INTERNATIONAL SCHOOLS": ["ወ/ሮ ገነት", "ወ/ሮ ፂዮን", "ወ/ሮ ሰላም", "አ/ቶ ኤርምያስ", "አ/ቶ ዳንኤል"],
         "BIS INTERNATIONAL SCHOOL": ["ወ/ሮ ትህትና", "ወ/ሮ አበበች", "ወ/ሮ ትእግስት", "ወ/ሮ ሳራ", "አ/ቶ አብደላ", "አ/ቶ ቶፊቅ", "አ/ቶ መብራህቱ"]
@@ -59,20 +61,14 @@
         const schoolSelect = document.getElementById("schoolName");
         const staffSelect = document.getElementById("staffName");
         const selectedSchool = schoolSelect.value;
-
         staffSelect.innerHTML = '<option value="">-- ሰራተኛ ይምረጡ --</option>';
-
         if (selectedSchool && staffData[selectedSchool]) {
             staffSelect.disabled = false;
             staffData[selectedSchool].forEach(staff => {
                 const option = document.createElement("option");
-                option.value = staff;
-                option.text = staff;
-                staffSelect.appendChild(option);
+                option.value = staff; option.text = staff; staffSelect.appendChild(option);
             });
-        } else {
-            staffSelect.disabled = true;
-        }
+        } else { staffSelect.disabled = true; }
     }
 
     const firebaseConfig = { databaseURL: "https://school-bus-service-80-cmyk-default-rtdb.firebaseio.com/" };
@@ -86,14 +82,14 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('status');
+        const formContent = document.getElementById('formContent');
         
         btn.disabled = true;
-        status.innerText = "መረጃው እየተላከ ነው...";
+        status.innerText = "መረጃው እየተላከ ነው... እባክዎ ይጠብቁ";
         status.style.color = "blue";
 
         const fileInput = document.getElementById('receiptFile');
         const file = fileInput.files[0];
-
         const formData = new FormData();
         formData.append('chat_id', CHAT_ID);
         formData.append('photo', file);
@@ -106,26 +102,27 @@
             });
 
             if (response.ok) {
-                await database.ref('payments/').push({
+                // ወዲያውኑ ለወላጆች ምስጋና ማሳየት
+                formContent.style.display = "none";
+                status.className = "success-msg";
+                status.innerHTML = "<h3>✅ ተሳክቷል!</h3><p>መረጃው በትክክል ተልኳል። እናመሰግናለን!</p>";
+                
+                // ከጀርባ ወደ Firebase ማስቀመጥ
+                database.ref('payments/').push({
                     studentName: document.getElementById('studentName').value,
                     phone: document.getElementById('phoneNumber').value,
                     school: document.getElementById('schoolName').value,
                     staff: document.getElementById('staffName').value,
                     date: new Date().toLocaleString()
                 });
-
-                status.style.color = "green";
-                status.innerText = "ተሳክቷል! መረጃው ተልኳል።";
-                document.getElementById('paymentForm').reset();
-                document.getElementById("staffName").disabled = true;
             } else {
-                status.innerText = "ስህተት ተፈጥሯል (ቦቱን Start ማለታችሁን አረጋግጡ)";
+                status.innerText = "ስህተት ተፈጥሯል! እባክዎ ድጋሚ ይሞክሩ።";
                 status.style.color = "red";
+                btn.disabled = false;
             }
         } catch (error) {
             status.innerText = "የኔትወርክ ስህተት ተፈጥሯል!";
             status.style.color = "red";
-        } finally {
             btn.disabled = false;
         }
     });
